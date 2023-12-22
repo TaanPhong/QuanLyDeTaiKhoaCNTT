@@ -1,0 +1,312 @@
+package com.trantanphong.service.implement;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
+
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import com.trantanphong.dto.StatisticalTotal;
+import com.trantanphong.service.ExportFileService;
+import com.trantanphong.service.SubjectService;
+
+@Service
+public class ExportFileServiceImp implements ExportFileService{
+
+	@Autowired
+	private SubjectService subjectService;
+	
+	@Override
+	public void exportPDFStatisticalTotoal(HttpServletResponse response) throws IOException {
+		// TODO Auto-generated method stub
+		List<StatisticalTotal> statisticalTotals = subjectService.getStatisticalTotals();
+		Document document = new Document(PageSize.A4);
+		PdfWriter.getInstance(document, response.getOutputStream());
+		document.open();
+		// Font chữ tiêu đề
+		Font fontDate = FontFactory.getFont("Arial Unicode MS", BaseFont.IDENTITY_H, BaseFont.EMBEDDED, Font.BOLD);
+		fontDate.setSize(13);
+		PdfPTable tableTitle = new PdfPTable(2);
+		tableTitle.setWidthPercentage(100f);
+		// Nội dung
+		Chunk firstName = new Chunk("Học viện công nghệ bưu chính viễn thông\n\n", fontDate);
+		String content = "Cơ sở tại thành phố Hồ Chí Minh";
+		Chunk nameSchool = new Chunk(content, fontDate);
+		nameSchool.setUnderline(1.5f, -5);
+		nameSchool.setUnderline(1.5f, -10f);
+		Paragraph paragraphSchool = new Paragraph();
+		paragraphSchool.add(firstName);
+		paragraphSchool.add(nameSchool);
+		PdfPCell cellLeft = new PdfPCell(paragraphSchool);
+		cellLeft.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cellLeft.setPaddingTop(30);
+		cellLeft.setBorder(PdfPCell.NO_BORDER);
+		Image image = Image.getInstance("D:\\fontendtotnghiep\\fontendtotnghiep\\public\\PTITLOGO.png");
+		image.scaleToFit(100, 100);
+		Chunk img = new Chunk(image, 0, 0, true);
+		Paragraph paragraphLogo = new Paragraph();
+		paragraphLogo.add(img);
+		PdfPCell cellRight = new PdfPCell(paragraphLogo);
+		cellRight.setHorizontalAlignment(Element.ALIGN_RIGHT);
+		cellRight.setBorder(PdfPCell.NO_BORDER);
+		
+		tableTitle.addCell(cellLeft);
+		tableTitle.addCell(cellRight);
+		document.add(tableTitle);
+		
+		Font fontTitle = FontFactory.getFont("Times New Roman", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		fontTitle.setSize(18);
+
+		// Tiêu đề
+		Paragraph paragraph = new Paragraph("Thống kê danh sách đề tài theo bộ môn niên khóa", fontTitle);
+		paragraph.setAlignment(Paragraph.ALIGN_CENTER);
+		paragraph.setSpacingBefore(20);
+		document.add(paragraph);
+
+		Font fontParagraph = FontFactory.getFont("Times New Roman", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		fontParagraph.setSize(10);
+		//fontParagraph.setStyle(Font.BOLD);
+		PdfPTable table = new PdfPTable(7);
+//		table.set(10, 1);
+		// set chữ im đậm
+		PdfPCell cell1 = new PdfPCell(new Phrase("STT", fontParagraph));
+		PdfPCell cell2 = new PdfPCell(new Phrase("Niên khóa", fontParagraph));
+		PdfPCell cell3 = new PdfPCell(new Phrase("Bộ môn", fontParagraph));
+		PdfPCell cell4 = new PdfPCell(new Phrase("Tổng đề tài được giao", fontParagraph));
+		PdfPCell cell5 = new PdfPCell(new Phrase("Số lượng sinh viên", fontParagraph));
+		PdfPCell cell6 = new PdfPCell(new Phrase("Số sinh viên hoàn thành", fontParagraph));
+		PdfPCell cell7 = new PdfPCell(new Phrase("Số sinh viên bỏ", fontParagraph));
+		cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell1.setPaddingTop(10);
+		cell1.setPaddingBottom(10);
+		cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell2.setPaddingTop(10);
+		cell2.setPaddingBottom(10);
+		cell3.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell3.setPaddingTop(10);
+		cell3.setPaddingBottom(10);
+		cell4.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell4.setPaddingTop(10);
+		cell4.setPaddingBottom(10);
+		cell5.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell5.setPaddingTop(10);
+		cell5.setPaddingBottom(10);
+		cell6.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell6.setPaddingTop(10);
+		cell6.setPaddingBottom(10);
+		cell7.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell7.setPaddingTop(10);
+		cell7.setPaddingBottom(10);
+		table.addCell(cell1);
+		table.addCell(cell2);
+		table.addCell(cell3);
+		table.addCell(cell4);
+		table.addCell(cell5);
+		table.addCell(cell6);
+		table.addCell(cell7);
+		int stt = 1;
+		int firstRow = 1;
+		int lastRow = 1;
+		long acdemicYearNow = statisticalTotals.get(0).getAcademicYear();
+		for (StatisticalTotal element : statisticalTotals) {
+			PdfPCell dataCell1 = new PdfPCell(new Phrase(String.valueOf(stt), fontParagraph));
+			dataCell1.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell1.setPadding(10);
+			PdfPCell dataCell2 = new PdfPCell(new Phrase(Long.toString(element.getAcademicYear()), fontParagraph));
+			dataCell2.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell2.setPadding(10);
+			PdfPCell dataCell3 = new PdfPCell(new Phrase(element.getSubjectCode(), fontParagraph));
+			dataCell3.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell3.setPadding(10);
+			PdfPCell dataCell4 = new PdfPCell(new Phrase(Long.toString(element.getNumberResearch()), fontParagraph));
+			dataCell4.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell4.setPadding(10);
+			PdfPCell dataCell5 = new PdfPCell(new Phrase(Long.toString(element.getNumberStudent()), fontParagraph));
+			dataCell5.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell5.setPadding(10);
+			PdfPCell dataCell6 = new PdfPCell(new Phrase(Long.toString(element.getNumberStudentPreform()), fontParagraph));
+			dataCell6.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell6.setPadding(10);
+			PdfPCell dataCell7 = new PdfPCell(new Phrase(Long.toString(element.getNumberStudentGiveUp()), fontParagraph));
+			dataCell7.setHorizontalAlignment(Element.ALIGN_CENTER);
+			dataCell7.setPadding(10);
+			table.addCell(dataCell1);
+			table.addCell(dataCell2);
+			table.addCell(dataCell3);
+			table.addCell(dataCell4);
+			table.addCell(dataCell5);
+			table.addCell(dataCell6);
+			table.addCell(dataCell7);
+			stt++;
+			lastRow++;
+			
+		}
+		float[] columnWidths = { 2f, 3f, 2f, 3f, 3f, 3f, 3f};
+		table.setWidths(columnWidths);
+		table.setWidthPercentage(100f);
+		table.setSpacingBefore(30);
+		document.add(table);
+		document.close();
+	}
+
+	@Override
+	public void exportExcelStatisticalTotal(HttpServletResponse response) throws IOException {
+		// TODO Auto-generated method stub
+		List<StatisticalTotal> statisticalTotals = subjectService.getStatisticalTotals();
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		XSSFSheet sheet = workbook.createSheet("Thong ke danh sach de tai");
+		XSSFRow row = sheet.createRow(0);
+		row.createCell(0).setCellValue("Học viện công nghệ bưu chính viễn thông");
+		int firstCol = 0; // Cột bắt đầu gộp (tùy chỉnh)
+		int lastCol = 4;  // Cột kết thúc gộp (tùy chỉnh)
+		int rowToMerge = 0; // Dòng cần gộp (tùy chỉnh)
+		int firstRow = rowToMerge;
+		int lastRow = rowToMerge;
+
+		// Thực hiện gộp các cột thành một ô merge
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		XSSFCellStyle titleStyle = workbook.createCellStyle();
+		XSSFFont titleFont = workbook.createFont();
+		titleFont.setFontName("Times New Roman");
+		titleFont.setFontHeightInPoints((short) 12);
+		titleStyle.setFont(titleFont);
+		titleStyle.setAlignment(HorizontalAlignment.CENTER); // Căn giữa
+		row.getCell(rowToMerge).setCellStyle(titleStyle);
+		
+		row.createCell(6).setCellValue("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM");
+		firstCol = 6;
+		lastCol = 10;
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		row.getCell(6).setCellStyle(titleStyle);
+		
+		XSSFRow row2 = sheet.createRow(1);
+		XSSFCellStyle titleRow2 = workbook.createCellStyle();
+		XSSFFont fontRow2 = workbook.createFont();
+		fontRow2.setFontName("Times New Roman");
+		fontRow2.setFontHeightInPoints((short) 12);
+		fontRow2.setBold(true);
+		titleRow2.setFont(fontRow2);
+		titleRow2.setAlignment(HorizontalAlignment.CENTER);
+		row2.createCell(0).setCellValue("cơ sở tại thành phố Hồ Chí Minh");
+		firstCol = 0;
+		lastCol = 4;
+		firstRow = 1;
+		lastRow = 1;
+//		titleStyle.setFont(titleFont);
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		row2.getCell(0).setCellStyle(titleRow2);
+		
+		row2.createCell(6).setCellValue("Độc lập- Tự do - Hạnh phúc");
+		firstCol = 6;
+		lastCol = 10;
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		row2.getCell(6).setCellStyle(titleRow2);
+		
+		// Tiêu đề
+		XSSFRow rowTitle = sheet.createRow(3);
+		rowTitle.createCell(0).setCellValue("Danh sách thống kê đề tài theo bộ môn và niên khóa");
+		firstCol = 0;
+		lastCol = 6;
+		firstRow = 3;
+		lastRow = 3;
+		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+		XSSFCellStyle titleStyles = workbook.createCellStyle();
+		XSSFFont titleFonts = workbook.createFont();
+		titleFonts.setFontName("Times New Roman");
+		titleFonts.setFontHeightInPoints((short) 16);
+		titleFonts.setBold(true);
+		titleStyles.setFont(titleFonts);
+		titleStyles.setAlignment(HorizontalAlignment.CENTER);
+		rowTitle.getCell(0).setCellStyle(titleStyles);
+		
+		// Header
+		XSSFRow rowHeader = sheet.createRow(5);
+		rowHeader.createCell(0).setCellValue("STT");
+		rowHeader.createCell(1).setCellValue("Niên khóa");
+		rowHeader.createCell(2).setCellValue("Bộ môn");
+		rowHeader.createCell(3).setCellValue("Tổng sô đề tài");
+		rowHeader.createCell(4).setCellValue("Tổng số sinh viên");
+		rowHeader.createCell(5).setCellValue("Số sinh viên hoàn thành");
+		rowHeader.createCell(6).setCellValue("Số sinh viên không hoàn thành");
+		XSSFCellStyle headerStyle = workbook.createCellStyle();
+		XSSFFont headerFont = workbook.createFont();
+		headerFont.setFontName("Times New Roman");
+		headerFont.setFontHeightInPoints((short) 10);
+		headerFont.setBold(true);
+		headerStyle.setFont(headerFont);
+		headerStyle.setAlignment(HorizontalAlignment.CENTER);
+		headerStyle.setBorderTop(BorderStyle.THIN); // Đường viền trên
+		headerStyle.setBorderBottom(BorderStyle.THIN); // Đường viền dưới
+		headerStyle.setBorderLeft(BorderStyle.THIN); // Đường viền trái
+		headerStyle.setBorderRight(BorderStyle.THIN); // Đường viền phải
+		
+		// Tạo đường viền 
+		XSSFCellStyle borderStyle = workbook.createCellStyle();
+		XSSFFont bodyFont = workbook.createFont();
+		bodyFont.setFontName("Times New Roman");
+		bodyFont.setFontHeightInPoints((short) 12);
+		borderStyle.setFont(bodyFont);
+		borderStyle.setAlignment(HorizontalAlignment.CENTER);
+		borderStyle.setBorderTop(BorderStyle.THIN); // Đường viền trên
+		borderStyle.setBorderBottom(BorderStyle.THIN); // Đường viền dưới
+		borderStyle.setBorderLeft(BorderStyle.THIN); // Đường viền trái
+		borderStyle.setBorderRight(BorderStyle.THIN); // Đường viền phải
+		
+		// Áp dụng style cho từng ô trong dòng tiêu đề
+		for (int i = 0; i <= 6; i++) {
+			rowHeader.getCell(i).setCellStyle(headerStyle);
+			//rowTitle.getCell(i).setCellStyle(borderStyle);
+		}
+		int rowIndex = 6;
+		int stt = 1;
+		for (StatisticalTotal element : statisticalTotals) {
+			XSSFRow dataRow = sheet.createRow(rowIndex);
+			dataRow.createCell(0).setCellValue(stt);
+			dataRow.createCell(1).setCellValue(element.getAcademicYear());
+			dataRow.createCell(2).setCellValue(element.getSubjectCode());
+			dataRow.createCell(3).setCellValue(element.getNumberResearch());
+			dataRow.createCell(4).setCellValue(element.getNumberStudent());
+			dataRow.createCell(5).setCellValue(element.getNumberStudentPreform());
+			dataRow.createCell(6).setCellValue(element.getNumberStudentGiveUp());
+			for (int i = 0; i < 7; i++) {
+				//rowTitle.getCell(i).setCellStyle(headerStyle);
+				dataRow.getCell(i).setCellStyle(borderStyle);
+			}
+			rowIndex++;
+			stt++;
+		}
+		for (int i = 0; i <= 7; i++) {
+		    sheet.autoSizeColumn(i);
+		}
+		ServletOutputStream ops = response.getOutputStream();
+		workbook.write(ops);
+		workbook.close();
+		ops.close();
+	}
+
+}

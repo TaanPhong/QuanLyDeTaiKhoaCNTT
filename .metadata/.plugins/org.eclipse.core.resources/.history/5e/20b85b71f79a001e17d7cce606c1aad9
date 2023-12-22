@@ -1,0 +1,394 @@
+package com.trantanphong.service.implement;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.trantanphong.convert.ResearchConvert;
+import com.trantanphong.dto.DetailStatusDTO;
+import com.trantanphong.dto.LectureDTO;
+import com.trantanphong.dto.ResearchDTO;
+import com.trantanphong.dto.SchoolYearDTO;
+import com.trantanphong.dto.SubjectDTO;
+import com.trantanphong.entity.Lectures;
+import com.trantanphong.entity.Research;
+import com.trantanphong.entity.SchoolYear;
+import com.trantanphong.entity.Student;
+import com.trantanphong.entity.Subject;
+import com.trantanphong.repository.LectureRepository;
+import com.trantanphong.repository.ResearchRepository;
+import com.trantanphong.repository.SchoolYearRepository;
+import com.trantanphong.service.AlfrescoService;
+import com.trantanphong.service.DetailStatusService;
+import com.trantanphong.service.LectureService;
+import com.trantanphong.service.ResearchService;
+import com.trantanphong.service.SchoolYearService;
+import com.trantanphong.service.StudentService;
+import com.trantanphong.service.SubjectService;
+
+@Service
+public class ResearchServiceImp implements ResearchService {
+
+//	private static Logger log = LogManager.getLogger(ResearchServiceImp.class);
+
+	@Autowired
+	private LectureRepository lectureRepository;
+
+	@Autowired
+	private ResearchRepository researchRepository;
+
+	@Autowired
+	private SchoolYearRepository schoolYearRepository;
+
+	@Autowired
+	private ResearchConvert researchConvert;
+
+	@Autowired
+	private DetailStatusService detailStatusService;
+
+	@Autowired
+	private StudentService studentService;
+
+	@Autowired
+	private SubjectService subjectService;
+
+	@Autowired
+	private LectureService lectureService;
+
+	@Autowired
+	private SchoolYearService schoolYearService;
+
+	@Autowired
+	private AlfrescoService alfrescoService;
+
+	@Override
+	// Thêm đề tài
+	public ResearchDTO addResearch(String username, ResearchDTO dto) {
+		// TODO Auto-generated method stub
+		Lectures lectures = lectureRepository.findByEmail(username);
+		SchoolYear schoolYear = schoolYearRepository.findBySchoolYearName(dto.getSchoolYearName());
+		Subject subject = lectures.getSubject();
+		Research newEntity = researchConvert.toEntity(dto);
+		newEntity.setLecture(lectures);
+		newEntity.setSchoolYear(schoolYear);
+		newEntity.setSubject(subject);
+		newEntity = researchRepository.save(newEntity);
+		LocalDate date = LocalDate.now();
+		LocalTime time = LocalTime.now();
+		String dateTime = date.toString() + " " + time.toString();
+		DetailStatusDTO status = new DetailStatusDTO((long) 8, newEntity.getId(), dateTime,
+				newEntity.getLecture().getId(),
+				newEntity.getLecture().getSurname() + " " + newEntity.getLecture().getFirstName());
+		status = detailStatusService.save(status);
+		ResearchDTO newDTO = researchConvert.toDTO(newEntity);
+		newDTO.setResearchStatusName(status.getStatusName());
+		return newDTO;
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearch() {
+		// TODO Auto-generated method stub
+		List<Research> researchs = researchRepository.findAll();
+		List<ResearchDTO> researchDTOs = new ArrayList<>();
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			DetailStatusDTO detailStatus = detailStatusService.getStatusNow(dto.getResearchID());
+			if (detailStatus.getStatusID() != 8) {
+				dto.setResearchStatusName(detailStatus.getStatusName());
+				researchDTOs.add(dto);
+			}
+
+		}
+		return researchDTOs;
+	}
+
+	@Override
+	public ResearchDTO updateResearch(Long id, ResearchDTO dto) {
+		// TODO Auto-generated method stub
+		Research entity = researchRepository.findById(id).orElse(null);
+		entity = researchConvert.toEntity(entity, dto);
+		ResearchDTO newDTO = researchConvert.toDTO(researchRepository.save(entity));
+		newDTO.setResearchStatusName(dto.getResearchStatusName());
+		return newDTO;
+	}
+
+	@Override
+	public void deleteResearch(long id) {
+		detailStatusService.delete(id);
+		researchRepository.deleteById(id);
+	}
+
+	@Override
+	public void updateRevise(long idStatus, String username, long[] ids) {
+		// TODO Auto-generated method stub
+		LectureDTO lecture = lectureService.getLecture(username);
+
+		for (long id : ids) {
+			Research entity = researchRepository.findById(id).orElse(null);
+			LocalDate date = LocalDate.now();
+			LocalTime time = LocalTime.now();
+			String dateTime = date.toString() + " " + time.toString();
+			DetailStatusDTO status = new DetailStatusDTO(idStatus, entity.getId(), dateTime, lecture.getId(),
+					lecture.getFullName());
+			status = detailStatusService.save(status);
+		}
+
+	}
+
+	@Override
+	public void assignTasks(String email) {
+		// TODO Auto-generated method stub
+		LectureDTO lectures = lectureService.getLecture(email);
+		List<SubjectDTO> subjectDTOs = subjectService.getAll();
+		long schoolId = schoolYearService.getMaxSchoolYear().getId();
+		for (SubjectDTO subjectDTO : subjectDTOs) {
+			List<Research> researchs = researchRepository.getAllResearchToAssigne(subjectDTO.getSubjectCode(),
+					schoolId);
+			List<Student> students = studentService.getAllStudentBySubject(subjectDTO.getSubjectCode());
+			Collections.shuffle(students);
+			if (students.size() > researchs.size()) {
+				int index = 0;
+				for (Research research : researchs) {
+					research.setStudent(students.get(index));
+					research = researchRepository.save(research);
+					LocalDate date = LocalDate.now();
+					LocalTime time = LocalTime.now();
+					String dateTime = date.toString() + " " + time.toString();
+					DetailStatusDTO status = new DetailStatusDTO((long) 6, research.getId(), dateTime, lectures.getId(),
+							lectures.getFullName());
+					status = detailStatusService.save(status);
+					index++;
+				}
+			} else {
+				int index = 0;
+				for (Student student : students) {
+					Research research = researchs.get(index);
+					research.setStudent(student);
+					research = researchRepository.save(research);
+					index++;
+					LocalDate date = LocalDate.now();
+					LocalTime time = LocalTime.now();
+					String dateTime = date.toString() + " " + time.toString();
+					DetailStatusDTO status = new DetailStatusDTO((long) 6, research.getId(), dateTime, lectures.getId(),
+							lectures.getFullName());
+					status = detailStatusService.save(status);
+				}
+			}
+		}
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearchBySchoolYearID(Long schoolYearId, Long lectureId) {
+		// TODO Auto-generated method stub
+
+		List<ResearchDTO> dtos = new ArrayList<>();
+		List<Research> researchs = researchRepository.getAllResearchBySchoolYear(schoolYearId, lectureId);
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			DetailStatusDTO detailStatus = detailStatusService.getStatusNow(dto.getResearchID());
+			// if (detailStatus.getStatusID() != 8) {
+			dto.setResearchStatusName(detailStatus.getStatusName());
+			dtos.add(dto);
+			// }
+
+		}
+		return dtos;
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearchEnigible(String subjectId) {
+		// TODO Auto-generated method stub
+		long schoolId = schoolYearService.getMaxSchoolYear().getId();
+		List<Research> researchs = researchRepository.getAllResearchEnligible(subjectId, schoolId);
+		List<ResearchDTO> researchDTOs = new ArrayList<>();
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			dto.setResearchStatusName("Đã được duyệt");
+			researchDTOs.add(dto);
+		}
+		return researchDTOs;
+	}
+
+	@Override
+	public ResearchDTO updateResearchByStudent(String studentCode, long researchId, String email) {
+		// TODO Auto-generated method stub
+		Research research = researchRepository.findById(researchId).orElse(null);
+		LectureDTO lectures = lectureService.getLecture(email);
+		LocalDate date = LocalDate.now();
+		LocalTime time = LocalTime.now();
+		String dateTime = date.toString() + " " + time.toString();
+		if (research != null) {
+			Student student = studentService.getByStudentCode(studentCode);
+			if (student != null) {
+				Research studentResearch = student.getResearch();
+				if (studentResearch != null && research.getStudent() != null) {
+					studentResearch.setStudent(research.getStudent());
+					researchRepository.save(studentResearch);
+					research.setStudent(student);
+					research = researchRepository.save(research);
+					DetailStatusDTO status = new DetailStatusDTO((long) 6, research.getId(), dateTime, lectures.getId(),
+							lectures.getFullName());
+					status = detailStatusService.save(status);
+					DetailStatusDTO studentStatus = new DetailStatusDTO((long) 6, studentResearch.getId(), dateTime,
+							lectures.getId(), lectures.getFullName());
+					studentStatus = detailStatusService.save(studentStatus);
+				} else if (studentResearch != null && research.getStudent() == null) {
+					studentResearch.setStudent(null);
+					researchRepository.save(studentResearch);
+					research.setStudent(student);
+					research = researchRepository.save(research);
+					DetailStatusDTO status = new DetailStatusDTO((long) 6, research.getId(), dateTime, lectures.getId(),
+							lectures.getFullName());
+					status = detailStatusService.save(status);
+					DetailStatusDTO studentStatus = new DetailStatusDTO((long) 9, studentResearch.getId(), dateTime,
+							lectures.getId(), lectures.getFullName());
+					studentStatus = detailStatusService.save(studentStatus);
+				} else {
+					research.setStudent(student);
+					research = researchRepository.save(research);
+					DetailStatusDTO status = new DetailStatusDTO((long) 6, research.getId(), dateTime, lectures.getId(),
+							lectures.getFullName());
+					status = detailStatusService.save(status);
+				}
+				return researchConvert.toDTO(research);
+			}
+			return null;
+		}
+		return null;
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearchBySubjectID(String subjectCode) {
+		// TODO Auto-generated method stub
+		List<Research> researchs = researchRepository.getAllResearchBySubjectCode(subjectCode);
+		List<ResearchDTO> dtos = new ArrayList<>();
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			DetailStatusDTO detailStatus = detailStatusService.getStatusNow(dto.getResearchID());
+			if (detailStatus.getStatusID() != 8) {
+				dto.setResearchStatusName(detailStatus.getStatusName());
+				dtos.add(dto);
+			}
+		}
+		return dtos;
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearchBySchoolYearId(Long schoolYearId) {
+		// TODO Auto-generated method stub
+		List<Research> researchs = researchRepository.getAllResearchBySchoolYearID(schoolYearId);
+		List<ResearchDTO> dtos = new ArrayList<>();
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			DetailStatusDTO detailStatus = detailStatusService.getStatusNow(dto.getResearchID());
+			if (detailStatus.getStatusID() != 8) {
+				dto.setResearchStatusName(detailStatus.getStatusName());
+				dtos.add(dto);
+			}
+		}
+		return dtos;
+	}
+
+	@Override
+	public List<ResearchDTO> getAllResearchBySchoolYearAndSubjectId(long schoolYearID, String subjectCode) {
+		List<Research> researchs = researchRepository.getAllResearchBySchoolYearAndSubjectId(schoolYearID, subjectCode);
+		List<ResearchDTO> dtos = new ArrayList<>();
+		for (Research research : researchs) {
+			ResearchDTO dto = researchConvert.toDTO(research);
+			DetailStatusDTO detailStatus = detailStatusService.getStatusNow(dto.getResearchID());
+			if (detailStatus.getStatusID() != 8) {
+				dto.setResearchStatusName(detailStatus.getStatusName());
+				dtos.add(dto);
+			}
+		}
+		return dtos;
+	}
+
+	@Override
+	public ResearchDTO updateOrCancel(long idStatus, String username, ResearchDTO dto) {
+		// TODO Auto-generated method stub
+		LectureDTO lecture = lectureService.getLecture(username);
+		Research entity = new Research();
+		Research oldEntity = researchRepository.findById(dto.getResearchID()).orElse(null);
+		entity = researchConvert.toEntity(oldEntity, dto);
+		LocalDate date = LocalDate.now();
+		LocalTime time = LocalTime.now();
+		String dateTime = date.toString() + " " + time.toString();
+		DetailStatusDTO status = new DetailStatusDTO(idStatus, entity.getId(), dateTime, lecture.getId(),
+				lecture.getFullName());
+		status = detailStatusService.save(status);
+		entity = researchRepository.save(entity);
+		return researchConvert.toDTO(entity);
+	}
+
+	@Override
+	public Research save(Research research) {
+		// TODO Auto-generated method stub
+		return researchRepository.save(research);
+	}
+
+	@Override
+	public List<String> getDocumentIds() {
+		// TODO Auto-generated method stub
+		List<Research> getAll = researchRepository.findAll();
+		List<String> result = new ArrayList<>();
+		for (Research research : getAll) {
+			if (research.getReportDocumnetCode() != null)
+				result.add(research.getReportDocumnetCode());
+		}
+		return result;
+	}
+
+	@Override
+	public Research getResearchById(Long id) {
+		// TODO Auto-generated method stub
+		Research research = researchRepository.findById(id).orElse(null);
+		return research;
+	}
+
+	@Override
+	public boolean checkAssignTasks() {
+		// TODO Auto-generated method stub
+		// LectureDTO lectures = lectureService.getLecture(email);
+		List<SubjectDTO> subjectDTOs = subjectService.getAll();
+		long schoolId = schoolYearService.getMaxSchoolYear().getId();
+		for (SubjectDTO subjectDTO : subjectDTOs) {
+			List<Research> researchs = researchRepository.getAllResearchToAssigne(subjectDTO.getSubjectCode(),
+					schoolId);
+			List<Student> students = studentService.getAllStudentBySubject(subjectDTO.getSubjectCode());
+			if (researchs.size() != 0 && students.size() != 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean checkUploadFileReport() {
+		// TODO Auto-generated method stub
+		SchoolYearDTO dto = schoolYearService.getSchoolYearMax();
+		if (dto != null) {
+			List<Research> researchs = researchRepository.getAllResearchSchoolYearNowNotReport(dto.getId());
+			if (researchs.size() > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void updateFileName() {
+		// TODO Auto-generated method stub
+		List<Research> researchs = researchRepository.findAll();
+		for (Research research : researchs) {
+			if (research.getReportDocumnetCode() != null) {
+				research.setReportFileName(alfrescoService.fileName(research.getReportDocumnetCode()));
+				research = researchRepository.save(research);
+			}
+
+		}
+	}
+}

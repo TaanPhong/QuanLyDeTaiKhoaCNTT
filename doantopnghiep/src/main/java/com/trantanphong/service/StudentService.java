@@ -1,0 +1,29 @@
+package com.trantanphong.service;
+
+import java.io.IOException;
+import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+import com.trantanphong.dto.StudentDTO;
+import com.trantanphong.entity.Student;
+
+public interface StudentService {
+	List<StudentDTO> getAllStudents();
+
+	List<StudentDTO> getStudentByNameClass(String className);
+
+	boolean addListStudent(MultipartFile file) throws IOException;
+
+	StudentDTO save(StudentDTO dto);
+
+	void delete(String studentCode);
+
+	List<Student> getAllStudentBySubject(String subjectId);
+
+	Student getByStudentCode(String studentCode);
+
+	boolean checkStudentNotResearch();
+
+	long[] getStudentNotResearch();
+	
+	long getSumStudentNotResearch();
+}

@@ -1,0 +1,5 @@
+package com.trantanphong.service.implement;
+
+public class ResearchStatusServiceImp implements{
+
+}

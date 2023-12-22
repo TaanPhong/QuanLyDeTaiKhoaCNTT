@@ -1,0 +1,79 @@
+package com.trantanphong.entity;
+
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "school_year")
+public class SchoolYear {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	
+	@Column(unique = true, nullable = false)
+	private String schoolYearName;
+	
+	@Column
+	private Long academicYear;
+	
+	@Column
+	private String dateBegin;
+	
+	@Column
+	private String dateEnd;
+	
+	@OneToMany(mappedBy = "schoolYear")
+	private List<Research> listResearchs;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getSchoolYearName() {
+		return schoolYearName;
+	}
+
+	public void setSchoolYearName(String schoolYearName) {
+		this.schoolYearName = schoolYearName;
+	}
+
+	public Long getAcademicYear() {
+		return academicYear;
+	}
+
+	public void setAcademicYear(Long academicYear) {
+		this.academicYear = academicYear;
+	}
+
+	public List<Research> getListResearchs() {
+		return listResearchs;
+	}
+
+	public void setListResearchs(List<Research> listResearchs) {
+		this.listResearchs = listResearchs;
+	}
+
+	public SchoolYear(Long id, String schoolYearName, Long academicYear, List<Research> listResearchs) {
+		super();
+		this.id = id;
+		this.schoolYearName = schoolYearName;
+		this.academicYear = academicYear;
+		this.listResearchs = listResearchs;
+	}
+
+	public SchoolYear() {
+		super();
+	}
+	
+}

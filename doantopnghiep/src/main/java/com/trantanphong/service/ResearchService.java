@@ -1,0 +1,55 @@
+package com.trantanphong.service;
+
+import java.util.List;
+
+import com.trantanphong.dto.ResearchDTO;
+import com.trantanphong.dto.ResearchStudentStatistical;
+import com.trantanphong.entity.Research;
+
+public interface ResearchService {
+	ResearchDTO addResearch(String username, ResearchDTO dto);
+
+	List<ResearchDTO> getAllResearch();
+
+	ResearchDTO updateResearch(Long id, ResearchDTO dto);
+
+	void deleteResearch(long id);
+
+	void updateRevise(long idStatus, String username, long[] ids);
+
+	void assignTasks(String email);
+
+	List<ResearchDTO> getAllResearchBySchoolYearID(Long schoolYearId, Long lectureId);
+
+	List<ResearchDTO> getAllResearchEnigible(String subjectId);
+
+	ResearchDTO updateResearchByStudent(String studentCode, long researchId, String email);
+
+	List<ResearchDTO> getAllResearchBySubjectID(String subjectCode);
+
+	List<ResearchDTO> getAllResearchBySchoolYearId(Long schoolYearId);
+
+	List<ResearchDTO> getAllResearchBySchoolYearAndSubjectId(long schoolYearId, String subjectCode);
+
+	ResearchDTO updateOrCancel(long idStatus, String username, ResearchDTO dto);
+
+	Research save(Research research);
+	
+	Research getResearchById(Long id);
+	
+	List<String> getDocumentIds();
+	
+	boolean checkAssignTasks();
+	
+	boolean checkUploadFileReport();
+	
+	void updateFileName();
+	
+	List<ResearchDTO> getAllResearchBySchoolYearStatus(long schoolId, long statusId);
+	
+	List<ResearchDTO> getAllResearchByStatus(long statusId);
+	
+	List<ResearchStudentStatistical> getResearchStudentStatisticalBySchoolYear(long schoolYearId);
+	
+	List<ResearchStudentStatistical> getResearchStudentStatisticalAllSchoolYear();
+}

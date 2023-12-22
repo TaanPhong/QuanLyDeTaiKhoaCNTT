@@ -1,0 +1,182 @@
+package com.trantanphong.entity;
+
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+@Entity
+@Table(name = "research")
+public class Research {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@Column(nullable = false)
+	private String researchName;
+
+	@Column(nullable = false)
+	private String theoreticalContent;
+
+	@Column(nullable = false)
+	private String practiceContext;
+
+	@Column(nullable = true, unique = true)
+	private String reportDocumnetCode;
+
+	@Column(nullable = true, unique = true)
+	private String reportFileName;
+
+	@Column
+	private String note;
+
+	@ManyToOne
+	@JoinColumn(name = "school_year_id")
+	@JsonManagedReference
+	private SchoolYear schoolYear;
+
+	@ManyToOne
+	@JoinColumn(name = "lecture_id")
+	@JsonManagedReference
+	private Lectures lecture;
+
+	@ManyToOne
+	@JoinColumn(name = "subject_id")
+	@JsonManagedReference
+	private Subject subject;
+
+	@OneToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name = "student_code", referencedColumnName = "studentCode")
+	private Student student;
+
+	public Set<ResearchStatus> getResearchStatus() {
+		return researchStatus;
+	}
+
+	public void setResearchStatus(Set<ResearchStatus> researchStatus) {
+		this.researchStatus = researchStatus;
+	}
+
+	@ManyToMany
+	@JoinTable(name = "detail_status", joinColumns = @JoinColumn(name = "research_id"), inverseJoinColumns = @JoinColumn(name = "status_id"))
+	private Set<ResearchStatus> researchStatus;
+
+	public String getReportFileName() {
+		return reportFileName;
+	}
+
+	public void setReportFileName(String reportFileName) {
+		this.reportFileName = reportFileName;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getResearchName() {
+		return researchName;
+	}
+
+	public void setResearchName(String researchName) {
+		this.researchName = researchName;
+	}
+
+	public String getTheoreticalContent() {
+		return theoreticalContent;
+	}
+
+	public void setTheoreticalContent(String theoreticalContent) {
+		this.theoreticalContent = theoreticalContent;
+	}
+
+	public String getPracticeContext() {
+		return practiceContext;
+	}
+
+	public void setPracticeContext(String practiceContext) {
+		this.practiceContext = practiceContext;
+	}
+
+	public String getReportDocumnetCode() {
+		return reportDocumnetCode;
+	}
+
+	public void setReportDocumnetCode(String reportDocumnetCode) {
+		this.reportDocumnetCode = reportDocumnetCode;
+	}
+
+	public SchoolYear getSchoolYear() {
+		return schoolYear;
+	}
+
+	public void setSchoolYear(SchoolYear schoolYear) {
+		this.schoolYear = schoolYear;
+	}
+
+	public Lectures getLecture() {
+		return lecture;
+	}
+
+	public void setLecture(Lectures lecture) {
+		this.lecture = lecture;
+	}
+
+	public Subject getSubject() {
+		return subject;
+	}
+
+	public void setSubject(Subject subject) {
+		this.subject = subject;
+	}
+
+	public Student getStudent() {
+		return student;
+	}
+
+	public void setStudent(Student student) {
+		this.student = student;
+	}
+
+	public Research(Long id, String researchName, String theoreticalContent, String practiceContext,
+			String reportDocumnetCode, SchoolYear schoolYear, Lectures lecture, Subject subject, Student student) {
+		super();
+		this.id = id;
+		this.researchName = researchName;
+		this.theoreticalContent = theoreticalContent;
+		this.practiceContext = practiceContext;
+		this.reportDocumnetCode = reportDocumnetCode;
+		this.schoolYear = schoolYear;
+		this.lecture = lecture;
+		this.subject = subject;
+		this.student = student;
+	}
+
+	public Research() {
+		super();
+	}
+
+}

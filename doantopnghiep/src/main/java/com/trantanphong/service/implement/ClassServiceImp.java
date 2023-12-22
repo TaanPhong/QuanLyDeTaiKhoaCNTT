@@ -1,0 +1,176 @@
+package com.trantanphong.service.implement;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.trantanphong.convert.ClassConvert;
+import com.trantanphong.convert.StudentConvert;
+import com.trantanphong.dto.ClassDTO;
+import com.trantanphong.dto.StudentDTO;
+import com.trantanphong.entity.Class;
+import com.trantanphong.entity.Student;
+import com.trantanphong.entity.Subject;
+import com.trantanphong.repository.ClassRepository;
+import com.trantanphong.service.ClassService;
+import com.trantanphong.service.SubjectService;
+
+@Service
+public class ClassServiceImp implements ClassService{
+
+	@Autowired
+	private ClassRepository classRepository;
+	
+	@Autowired
+	private ClassConvert classConvert;
+	
+	@Autowired 
+	private StudentConvert studentConvert;
+	
+	@Autowired
+	private SubjectService subjectService;
+	
+	@Override
+	public List<ClassDTO> getAllClasses() {
+		List<ClassDTO> dtos = new ArrayList<>();
+		List<Class> classes = classRepository.findAll();
+		for (Class class1 : classes) {
+			ClassDTO dto = classConvert.toDTO(class1);
+			if(!class1.getListStudents().isEmpty())
+			{
+				List<StudentDTO> studentDTOs = new ArrayList<>();
+				for (Student student : class1.getListStudents()) {
+					StudentDTO studentDTO = studentConvert.toDTO(student);
+					studentDTOs.add(studentDTO);
+				}
+				dto.setStudentDTOs(studentDTOs);
+			}
+			dtos.add(dto);
+		}
+		return dtos;
+	}
+
+	@Override
+	public Class getClassByName(String className) {
+		// TODO Auto-generated method stub
+		Class entity = classRepository.findByClassName(className).orElse(null);
+		return entity;
+	}
+
+	@Override
+	public Class getClassById(String classCode) {
+		// TODO Auto-generated method stub
+		Class entity = classRepository.findById(classCode).orElse(null);
+		return entity;
+	}
+
+	@Override
+	public boolean improtFileClass(MultipartFile file) throws IOException {
+		// TODO Auto-generated method stub
+		try {
+			if(!file.isEmpty()) {
+				XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
+				XSSFSheet sheet = workbook.getSheetAt(0);
+				for (int i = 2; i <= sheet.getLastRowNum(); i++) {
+					Row row = sheet.getRow(i);
+					boolean isInsert = true;
+					Class entity = new Class();
+					if(row.getCell(1) != null)
+					{
+						if(row.getCell(1).getStringCellValue() != null) {
+							entity.setClassCode(row.getCell(1).getStringCellValue());
+						}
+						else
+							isInsert = false;
+					}
+					else
+						isInsert = false;
+					if(row.getCell(2) != null) {
+						if(row.getCell(2).getStringCellValue() != null) {
+							entity.setClassName(row.getCell(2).getStringCellValue());
+						}
+						else
+							isInsert = false;
+					}
+					if(row.getCell(3) != null) {
+						if(row.getCell(3).getStringCellValue() != null) {
+							Subject subject = subjectService.getSubject(row.getCell(3).getStringCellValue());
+							if(subject != null)
+								entity.setSubject(subject);
+						}
+						else 
+							isInsert = false;
+					}
+					else
+						isInsert = false;
+					if(isInsert) {
+						entity = classRepository.save(entity);
+					}
+				}
+				workbook.close();
+				return true;
+			}
+			return false;
+		} catch (Exception e) {
+			// TODO: handle exception
+			return false;
+		}
+	}
+
+	@Override
+	public ClassDTO save(ClassDTO dto) {
+		// TODO Auto-generated method stub
+		Class oldEntity = classRepository.findById(dto.getClassCode()).orElse(null);
+		Class newEntity = new Class();
+		if(oldEntity != null)
+		{
+			newEntity = classConvert.toEntity(dto, oldEntity);
+		}
+		else
+		{
+			newEntity = classConvert.toEntity(dto);
+		}
+		Subject subject = subjectService.getSubject(dto.getSubjectName());
+		try {
+			newEntity.setSubject(subject);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return classConvert.toDTO(classRepository.save(newEntity));
+	}
+
+	@Override
+	public void delete(String classCode) {
+		// TODO Auto-generated method stub
+		classRepository.deleteById(classCode);
+	}
+
+	@Override
+	public List<ClassDTO> getAllClassBySubjectCode(String subjectCode) {
+		// TODO Auto-generated method stub
+		List<ClassDTO> dtos = new ArrayList<>();
+		List<Class> classes = classRepository.getAllClassBySubjectCode(subjectCode);
+		for (Class class1 : classes) {
+			ClassDTO dto = classConvert.toDTO(class1);
+			if(!class1.getListStudents().isEmpty())
+			{
+				List<StudentDTO> studentDTOs = new ArrayList<>();
+				for (Student student : class1.getListStudents()) {
+					StudentDTO studentDTO = studentConvert.toDTO(student);
+					studentDTOs.add(studentDTO);
+				}
+				dto.setStudentDTOs(studentDTOs);
+			}
+			dtos.add(dto);
+		}
+		return dtos;
+	}
+
+}

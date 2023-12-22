@@ -1,0 +1,184 @@
+package com.trantanphong.controller;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.trantanphong.dto.AccountDTO;
+import com.trantanphong.dto.ClassDTO;
+import com.trantanphong.dto.LectureDTO;
+import com.trantanphong.dto.PrositionDTO;
+import com.trantanphong.dto.SchoolYearDTO;
+import com.trantanphong.dto.StudentDTO;
+import com.trantanphong.dto.SubjectDTO;
+import com.trantanphong.service.AccountService;
+import com.trantanphong.service.ClassService;
+import com.trantanphong.service.LectureService;
+import com.trantanphong.service.PositionService;
+import com.trantanphong.service.SchoolYearService;
+import com.trantanphong.service.StudentService;
+import com.trantanphong.service.SubjectService;
+
+@RestController
+@CrossOrigin(origins = "http://localhost:3000", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+		RequestMethod.DELETE }, allowedHeaders = "*", allowCredentials = "true")
+public class FacultySecretaryController {
+
+	@Autowired
+	private SubjectService subjectService;
+
+	@Autowired
+	private PositionService positionService;
+
+	@Autowired
+	private SchoolYearService schoolYearService;
+
+	@Autowired
+	private LectureService lectureService;
+
+	@Autowired
+	private AccountService accountService;
+
+	@Autowired
+	private ClassService classService;
+
+	@Autowired
+	private StudentService studentService;
+
+	@GetMapping("/SchoolYears")
+	public List<SchoolYearDTO> getAllSchoolYear() {
+		return schoolYearService.getAll();
+	}
+
+	@PostMapping("/SchoolYear")
+	public SchoolYearDTO addSchoolYear(@RequestBody SchoolYearDTO dto) {
+		return schoolYearService.save(dto);
+	}
+
+	@PutMapping("/SchoolYear/{id}")
+	public SchoolYearDTO updateSchoolYear(@RequestBody SchoolYearDTO dto) {
+		return schoolYearService.save(dto);
+	}
+
+	@DeleteMapping("/SchoolYear/{id}")
+	public void delete(@PathVariable long id) {
+		schoolYearService.delete(id);
+	}
+
+	// ================================> Lecture
+	// <========================================
+
+	@GetMapping("/lectures")
+	public List<LectureDTO> getAlllectures() {
+		return lectureService.getAllLectures();
+	}
+
+	@PostMapping("/lectures")
+	public LectureDTO addLecture(@RequestBody LectureDTO dto) {
+		return lectureService.save(dto);
+	}
+
+	@PutMapping("/lectures/{id}")
+	public LectureDTO update(@RequestBody LectureDTO dto) {
+		return lectureService.save(dto);
+	}
+
+	// ===============================> Position
+	// <=====================================
+
+	@GetMapping("/postions")
+	public List<PrositionDTO> getAllPosition() {
+		return positionService.getAll();
+	}
+
+	// =============================> subject <=============================
+
+	@GetMapping("/subjects")
+	public List<SubjectDTO> getAllSubjects() {
+		return subjectService.getAll();
+	}
+
+	// ===================================> Account <===============================
+	@GetMapping("/accounts")
+	public List<AccountDTO> getAllAccount() {
+		return accountService.getAllAccount();
+	}
+
+	// =====================================> Class <========================================
+	@GetMapping("/classes")
+	public List<ClassDTO> getAllClasses() {
+		return classService.getAllClasses();
+	}
+	
+	@PostMapping("/upload-file/class")
+	public ResponseEntity<String> improtFile(@RequestParam("file") MultipartFile file) throws IOException{
+		if(classService.improtFileClass(file))
+			return ResponseEntity.ok("Upload file thành công");
+		else
+			return ResponseEntity.ok("Upload file bị lỗi");
+	}
+	
+	@PostMapping("/class")
+	public ClassDTO addClass(@RequestBody ClassDTO dto) {
+		return classService.save(dto);
+	}
+	
+	@PutMapping("/class/{classCode}")
+	public ClassDTO updateClass(@RequestBody ClassDTO dto) {
+		return classService.save(dto);
+	}
+	
+	@DeleteMapping("/class/{classCode}")
+	public void deleteClass(@PathVariable String classCode) {
+		
+	}
+
+	// ============================================> student <==============================
+	@PostMapping("/upload-excel-student")
+	public ResponseEntity<String> uploadListStudent(@RequestParam("file") MultipartFile file) throws IOException {
+		boolean addListStudent = studentService.addListStudent(file);
+		if (addListStudent)
+			return ResponseEntity.ok("Upload file thành công");
+		else
+			return ResponseEntity.ok("Upload file xảy ra lỗi");
+	}
+
+	@GetMapping("/student/{className}")
+	public List<StudentDTO> getAllStudentByNameClasses(@PathVariable String className) {
+		return studentService.getStudentByNameClass(className);
+	}
+
+	@PutMapping("/student/{studentCode}")
+	public StudentDTO updateStudent(@RequestBody StudentDTO dto) {
+		return studentService.save(dto);
+	}
+	
+	@PostMapping("/student")
+	public StudentDTO addStudent(@RequestBody StudentDTO dto) {
+		return studentService.save(dto);
+	}
+	
+	@GetMapping("/student")
+	public List<StudentDTO> getAllStudent(){
+		return studentService.getAllStudents();
+	}
+	
+	@DeleteMapping("/student/{studentCode}")
+	public void deleteStudentCode(@PathVariable String studentCode) {
+		studentService.delete(studentCode);
+	}
+}

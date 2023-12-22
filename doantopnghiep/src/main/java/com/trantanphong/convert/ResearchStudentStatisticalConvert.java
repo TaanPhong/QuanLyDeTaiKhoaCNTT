@@ -1,0 +1,39 @@
+package com.trantanphong.convert;
+
+import javax.persistence.Tuple;
+
+import org.springframework.stereotype.Component;
+
+import com.trantanphong.dto.ResearchStudentStatistical;
+
+@Component
+public class ResearchStudentStatisticalConvert {
+	public ResearchStudentStatistical toDTOBySchoolYear(Tuple tuple) {
+		ResearchStudentStatistical dto = new ResearchStudentStatistical();
+		dto.setResearchName(tuple.get(0).toString());
+		dto.setStatusName(tuple.get(2).toString());
+		if(tuple.get(1) != null)
+		{
+			dto.setFullNameStudent(tuple.get(1).toString());
+		}
+		else {
+			dto.setFullNameStudent("-");
+		}
+		return dto;
+	}
+	
+	public ResearchStudentStatistical toDTO(Tuple tuple) {
+		ResearchStudentStatistical dto = new ResearchStudentStatistical();
+		dto.setResearchName(tuple.get(0).toString());
+		dto.setStatusName(tuple.get(2).toString());
+		if(tuple.get(1) != null)
+		{
+			dto.setFullNameStudent(tuple.get(1).toString());
+		}
+		else {
+			dto.setFullNameStudent("-");
+		}
+		dto.setSchoolYearName(tuple.get(3).toString());
+		return dto;
+	}
+}

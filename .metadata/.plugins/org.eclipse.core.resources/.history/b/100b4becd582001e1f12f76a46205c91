@@ -1,0 +1,43 @@
+package com.trantanphong.service.implement;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.trantanphong.convert.SubjectConvert;
+import com.trantanphong.dto.SubjectDTO;
+import com.trantanphong.entity.Subject;
+import com.trantanphong.repository.SubjectRepository;
+import com.trantanphong.service.SubjectService;
+
+@Service
+public class SubjectServiceImp implements SubjectService{
+
+	@Autowired
+	private SubjectRepository subjectRepository;
+	
+	@Autowired
+	private SubjectConvert subjectConvert;
+
+	@Override
+	public List<SubjectDTO> getAll() {
+		// TODO Auto-generated method stub
+		List<Subject> subjects = subjectRepository.findAll();
+		List<SubjectDTO> subjectDTOs = new ArrayList<>();
+		for (Subject subject : subjects) {
+			SubjectDTO dto = subjectConvert.toDTO(subject);
+			subjectDTOs.add(dto);
+		}
+		return subjectDTOs;
+	}
+
+	@Override
+	public Subject getSubject(String subjectName) {
+		// TODO Auto-generated method stub
+		Subject subject = subjectRepository.findByNameSubject(subjectName);
+		return null;
+	}
+
+}

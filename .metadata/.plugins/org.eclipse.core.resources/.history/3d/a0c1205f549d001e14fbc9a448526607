@@ -1,0 +1,309 @@
+package com.trantanphong.service.implement;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.chemistry.opencmis.client.api.CmisObject;
+import org.apache.chemistry.opencmis.client.api.Document;
+import org.apache.chemistry.opencmis.client.api.Folder;
+import org.apache.chemistry.opencmis.client.api.ItemIterable;
+import org.apache.chemistry.opencmis.client.api.ObjectId;
+import org.apache.chemistry.opencmis.client.api.Session;
+import org.apache.chemistry.opencmis.client.api.SessionFactory;
+import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.commons.PropertyIds;
+import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.data.ContentStream;
+import org.apache.chemistry.opencmis.commons.enums.BindingType;
+import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.trantanphong.entity.Research;
+import com.trantanphong.entity.Student;
+import com.trantanphong.service.AlfrescoService;
+import com.trantanphong.service.ResearchService;
+import com.trantanphong.service.StudentService;
+
+@Service
+public class AlfrescoServiceImp implements AlfrescoService {
+	@Autowired
+	private ResearchService researchService;
+
+	@Autowired
+	private StudentService studentService;
+
+	@Override
+	public String save(MultipartFile file, String studentCode) throws IOException {
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Document Creation
+		Map<String, Object> DocumentName = new HashMap<String, Object>();
+		DocumentName.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+		DocumentName.put(PropertyIds.NAME, file.getOriginalFilename());
+		// Document read/write
+		byte[] content = file.getBytes();
+		InputStream stream = new ByteArrayInputStream(content);
+		ContentStream contentStream = new ContentStreamImpl("MyFile", BigInteger.valueOf(content.length), "text/plain",
+				stream);
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Folder root = session.getRootFolder();
+		Folder oneFolder = null;
+		ItemIterable<CmisObject> childern = root.getChildren();
+		for (CmisObject child : childern) {
+			if (child instanceof Folder && "MyFolder".equals(child.getName())) {
+				oneFolder = (Folder) child;
+				break;
+			}
+		}
+		if (oneFolder != null) {
+			Student student = studentService.getByStudentCode(studentCode);
+			String schoolYear = student.getResearch().getSchoolYear().getAcademicYear().toString();
+			ItemIterable<CmisObject> childernOneFolder = oneFolder.getChildren();
+			Folder saveFile = null;
+			for (CmisObject cmisObject : childernOneFolder) {
+				if (child instanceof Folder && schoolYear.equals(cmisObject.getName())) {
+					oneFolder = (Folder) cmisObject;
+					break;
+				}
+			}
+			Document doc = oneFolder.createDocument(DocumentName, contentStream, VersioningState.MAJOR);
+			if (student != null) {
+				if (student.getResearch() != null) {
+					Research research = student.getResearch();
+					research.setReportDocumnetCode(doc.getId());
+					research.setReportFileName(doc.getName());
+					research = researchService.save(research);
+				}
+			}
+			return doc.getId();
+		}
+
+		return null;
+	}
+
+	@Override
+	public String saveAuto(MultipartFile[] files) throws IOException {
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Folder root = session.getRootFolder();
+		Folder oneFolder = null;
+		ItemIterable<CmisObject> childern = root.getChildren();
+		for (CmisObject child : childern) {
+			if (child instanceof Folder && "MyFolder".equals(child.getName())) {
+				oneFolder = (Folder) child;
+				break;
+			}
+		}
+
+		if (oneFolder != null) {
+			for (MultipartFile file : files) {
+				// Document Creation
+				Map<String, Object> DocumentName = new HashMap<String, Object>();
+				DocumentName.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+				DocumentName.put(PropertyIds.NAME, file.getOriginalFilename());
+				// Document read/write
+				byte[] content = file.getBytes();
+				InputStream stream = new ByteArrayInputStream(content);
+				ContentStream contentStream = new ContentStreamImpl("MyFile", BigInteger.valueOf(content.length),
+						"text/plain", stream);
+
+				Document doc = oneFolder.createDocument(DocumentName, contentStream, VersioningState.MAJOR);
+				String[] nameFile = file.getOriginalFilename().split("_");
+				Student student = studentService.getByStudentCode(nameFile[0]);
+				if (student != null) {
+					if (student.getResearch() != null) {
+						Research research = student.getResearch();
+						research.setReportDocumnetCode(doc.getId());
+						research.setReportFileName(doc.getName());
+						research = researchService.save(research);
+					}
+				}
+			}
+			return "Success";
+		}
+		return null;
+	}
+
+	@Override
+	public List<String> listFileName() {
+		// TODO Auto-generated method stub
+		List<String> documentIds = researchService.getDocumentIds();
+		if (documentIds.size() == 0)
+			return null;
+		List<String> listFileName = new ArrayList<>();
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		for (String documentId : documentIds) {
+			Document doc = (Document) session.getObject(documentId);
+
+			if (doc != null) {
+				String[] names = doc.getName().split("\\.");
+				listFileName.add(names[0]);
+			}
+		}
+		return listFileName;
+	}
+
+	@Override
+	public void exportFile(HttpServletResponse response, String documentId) throws IOException {
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Document doc = (Document) session.getObject(documentId);
+		if (doc != null) {
+			ContentStream contentStream = doc.getContentStream();
+			InputStream inputStream = contentStream.getStream();
+
+			// Thiết lập header để trình duyệt hiểu đây là tệp tin để tải xuống
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + doc.getName() + "\"");
+			response.setContentType(contentStream.getMimeType());
+
+			// Ghi dữ liệu từ InputStream vào HttpServletResponse để trình duyệt có thể tải
+			// xuống
+			int bytesRead;
+			byte[] buffer = new byte[1024];
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				response.getOutputStream().write(buffer, 0, bytesRead);
+			}
+			response.flushBuffer();
+		}
+	}
+
+	@Override
+	public String fileName(String reportCode) {
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Document doc = (Document) session.getObject(reportCode);
+		if (doc != null)
+			return doc.getName();
+		return null;
+	}
+
+	@Override
+	public void deleteDocument(String reportCode, long id) {
+		// TODO Auto-generated method stub
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Document doc = (Document) session.getObject(reportCode);
+		if (doc != null) {
+			doc.delete(true);
+			Research research = researchService.getResearchById(id);
+			if (research != null) {
+				research.setReportDocumnetCode(null);
+				research.setReportFileName(null);
+				research = researchService.save(research);
+			}
+		}
+	}
+
+	@Override
+	public byte[] getFile(String reportCode) throws IOException {
+		SessionFactory factory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<>();
+		// Credentials setup
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "123456");
+
+		// Connection to Alfresco
+		parameter.put(SessionParameter.ATOMPUB_URL,
+				"http://127.0.0.1:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		// Get repository store
+		Session session = factory.getRepositories(parameter).get(0).createSession();
+		Document doc = (Document) session.getObject(reportCode);
+		if (doc != null) {
+			// String mimeType = doc.getContentStreamMimeType();
+			// if (mimeType.equals("text/plain") || mimeType.equals("application/msword") ||
+			// mimeType.equals("application/pdf")) {
+			try (InputStream inputStream = doc.getContentStream().getStream()) {
+				byte[] fileContent = inputStream.readAllBytes();
+				return fileContent;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			// }
+		}
+		return null;
+	}
+
+}

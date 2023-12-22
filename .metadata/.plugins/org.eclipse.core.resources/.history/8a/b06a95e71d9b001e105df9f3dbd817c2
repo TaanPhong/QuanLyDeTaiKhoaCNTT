@@ -1,0 +1,14 @@
+package com.trantanphong.convert;
+
+import javax.persistence.Tuple;
+
+import org.springframework.stereotype.Component;
+
+import com.trantanphong.dto.ResearchStudentStatistical;
+
+@Component
+public class ResearchStudentStatisticalConvert {
+	public ResearchStudentStatistical toDTO(Tuple tuple) {
+		ResearchStudentStatistical dto = new ResearchStudentStatistical();
+	}
+}

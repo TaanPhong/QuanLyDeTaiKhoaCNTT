@@ -1,0 +1,128 @@
+package com.trantanphong.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import com.trantanphong.dto.AccountDTO;
+import com.trantanphong.dto.LectureDTO;
+import com.trantanphong.dto.ResearchDTO;
+import com.trantanphong.dto.SchoolYearDTO;
+import com.trantanphong.entity.SchoolYear;
+import com.trantanphong.service.AccountService;
+import com.trantanphong.service.LectureService;
+import com.trantanphong.service.ResearchService;
+import com.trantanphong.service.SchoolYearService;
+
+@RestController
+@CrossOrigin(origins = "http://localhost:3000", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+		RequestMethod.DELETE }, allowedHeaders = "*", allowCredentials = "true")
+public class LectureController {
+	
+	@Autowired
+	private LectureService lectureService;
+	
+	@Autowired
+	private ResearchService researchService;
+	
+	@Autowired
+	private AccountService accountService;
+	
+	@Autowired
+	private SchoolYearService schoolYearService;
+	
+	
+	@GetMapping("/{username}")
+	public LectureDTO getInforLecture(@PathVariable String username) {
+		return lectureService.getLecture(username);
+	}
+	
+	@PostMapping("/{username}")
+	public ResearchDTO addResearch(@PathVariable String username, @RequestBody ResearchDTO dto)
+	{
+		return researchService.addResearch(username, dto);
+	}
+	
+	@GetMapping("/research/all")
+	public List<ResearchDTO> getAllResearch(){
+		return researchService.getAllResearch();
+	}
+	
+	@PutMapping("/research/{id}")
+	public ResearchDTO updateResearch(@PathVariable long id,@RequestBody ResearchDTO dto) {
+		return researchService.updateResearch(id, dto);
+	}
+	
+	@DeleteMapping("/research/{id}")
+	public void deleteResearch(@PathVariable long id) {
+		researchService.deleteResearch(id);
+	}
+	
+	@PostMapping("/research/update/revise/{idStatus}/{username}")
+	public void updateResearch(@RequestBody long [] ids, @PathVariable long idStatus, @PathVariable String username) {
+		// 7: đang duyệt
+		// 4: đã từ chối
+		// 3: Chỉnh sửa
+		researchService.updateRevise(idStatus, username, ids);
+	}
+	
+	@PostMapping("/research/updateOrCancel/revise/{idStatus}/{username}")
+	public ResearchDTO updateOrCancel(@PathVariable long idStatus, @PathVariable String username, @RequestBody ResearchDTO dto) {
+		return researchService.updateOrCancel(idStatus, username, dto);
+	}
+	
+	/// Login 
+	@PostMapping("/login")
+	public AccountDTO getAccount(@RequestBody AccountDTO dto) {
+		return accountService.getAccout(dto);
+	}
+	
+	@GetMapping("/research/{schoolYearId}/{lectureId}")
+	public List<ResearchDTO> getAllResearchBySchoolYearId(@PathVariable long schoolYearId, @PathVariable long lectureId){
+		return researchService.getAllResearchBySchoolYearID(schoolYearId, lectureId);
+	}
+	
+	@GetMapping("/research/{subjectCode}")
+	public List<ResearchDTO> getAllResearchBySubjectCode(@PathVariable String subjectCode){
+		return researchService.getAllResearchBySubjectID(subjectCode);
+	}
+	
+	@GetMapping("/research/department/{schoolYearId}/{subjectCode}")
+	public List<ResearchDTO> getAllResearchBySchoolYearAndSubject(@PathVariable long schoolYearId, @PathVariable String subjectCode){
+		return researchService.getAllResearchBySchoolYearAndSubjectId(schoolYearId, subjectCode);
+	}
+	
+	@GetMapping("/research/chair/{schoolYearId}")
+	public List<ResearchDTO> getAllResearchBySchoolYear(@PathVariable long schoolYearId){
+		return researchService.getAllResearchBySchoolYearId(schoolYearId);
+	}
+	@PutMapping("/login/{username}")
+	public AccountDTO changePassword(@RequestBody AccountDTO accountDTO, @PathVariable String username) {
+		return accountService.save(accountDTO);
+	}
+	
+	@GetMapping("/login/forget/{email}")
+	public String forgetPassword(@PathVariable String email) {
+		return accountService.forgetPassword(email);
+	}
+	
+	// Student 
+	@GetMapping("/schoolYear/max")
+	public SchoolYearDTO getSchoolYearMax() {
+		return schoolYearService.getSchoolYearMax();
+	}
+	
+	@GetMapping("/updateFile/test")
+	public void test {
+		
+	}
+}
